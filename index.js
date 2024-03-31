@@ -22,52 +22,45 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   }
 });
-
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
 
-    const products = client.db("Binary-Tech-DB").collection("Products")
+    const productsDB = client.db("Binary-Tech-DB").collection("Products")
     const phones = client.db("Binary-Tech-DB").collection("Phones")
-    const mobo = client.db("Binary-Tech-DB").collection("Mother-Boards")
-    const cpu = client.db("Binary-Tech-DB").collection("CPU")
-    const gpu = client.db("Binary-Tech-DB").collection("GPU")
-    const ram = client.db("Binary-Tech-DB").collection("RAM")
-    const cpucooler = client.db("Binary-Tech-DB").collection("CPU-Cooler")
+    const cart = client.db("Binary-Tech-DB").collection("user-cart")
+    const categories = client.db("Binary-Tech-DB").collection("category")
 
     app.get('/products', async(req, res)=>{
-        const result = await products.find().toArray()
+        const result = await productsDB.find().toArray()
         res.send(result)
-
     })
     app.get('/phones', async(req, res)=>{
         const result = await phones.find().toArray()
         res.send(result)
     })
-    app.get('/motherBoard', async(req, res)=>{
-        const result = await mobo.find().toArray()
+    app.get('/cart', async(req, res)=>{
+        const result = await cart.find().toArray()
         res.send(result)
     })
-    app.get('/cpu', async(req, res)=>{
-        const result = await cpu.find().toArray()
-        res.send(result)
-    })
-    app.get('/gpu', async(req, res)=>{
-        const result = await gpu.find().toArray()
-        res.send(result)
-    })
-    app.get('/ram', async(req, res)=>{
-        const result = await ram.find().toArray()
-        res.send(result)
-    })
-    app.get('/cpu_cooler', async(req, res)=>{
-        const result = await cpucooler.find().toArray()
+    app.get('/category', async(req, res)=>{
+        const result = await categories.find().toArray()
         res.send(result)
     })
 
-
-
+    app.get("/allProducts", async (req, res) => {
+      const name = req.query.category;
+      let products = [];
+      if (name == "all products") {
+        products = await productsDB.find({}).toArray();
+        return res.send( products );
+      }
+      products = await productsDB
+        .find({ category: { $regex: name, $options: "i" } })
+        .toArray();
+      res.send( products);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });

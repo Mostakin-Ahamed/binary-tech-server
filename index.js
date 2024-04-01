@@ -1,5 +1,6 @@
 const express = require('express');
 const app = express();
+
 const cors = require('cors');
 require('dotenv').config()
 
@@ -11,7 +12,7 @@ app.use(cors());
 app.use(express.json());
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@mostakinahamed.fo1obhn.mongodb.net/?retryWrites=true&w=majority&appName=MostakinAhamed`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -31,22 +32,63 @@ async function run() {
     const phones = client.db("Binary-Tech-DB").collection("Phones")
     const cart = client.db("Binary-Tech-DB").collection("user-cart")
     const categories = client.db("Binary-Tech-DB").collection("category")
+    const popular = client.db("Binary-Tech-DB").collection("Popular")
+    const userCollection = client.db("Binary-Tech-DB").collection("User-Info")
 
-    app.get('/products', async(req, res)=>{
-        const result = await productsDB.find().toArray()
-        res.send(result)
+    app.get('/products', async (req, res) => {
+      const result = await productsDB.find().toArray()
+      res.send(result)
     })
-    app.get('/phones', async(req, res)=>{
-        const result = await phones.find().toArray()
-        res.send(result)
+    app.get('/phones', async (req, res) => {
+      const result = await phones.find().toArray()
+      res.send(result)
     })
-    app.get('/cart', async(req, res)=>{
-        const result = await cart.find().toArray()
-        res.send(result)
+    app.get('/cart', async (req, res) => {
+      const result = await cart.find().toArray()
+      res.send(result)
     })
-    app.get('/category', async(req, res)=>{
-        const result = await categories.find().toArray()
-        res.send(result)
+    app.get('/popular', async (req, res) => {
+      const result = await popular.find().toArray()
+      res.send(result)
+    })
+    app.get('/category', async (req, res) => {
+      const result = await categories.find().toArray()
+      res.send(result)
+    })
+
+
+    app.get('/allProducts/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await productsDB.findOne(query);
+      res.send(result)
+    })
+
+    app.post('/users', async (req, res) => {
+      const user = req.body;
+      const query = { email: user.email }
+      const existingUser = await userCollection.findOne(query);
+      if (existingUser) {
+        return res.send({ message: 'Email already exists!' })
+      }
+      const result = await userCollection.insertOne(user);
+      res.send(result);
+
+    })
+
+    app.post('/addToCart', async (req, res) => {
+      const cartItem = req.body;
+      const result = await cart.insertOne(cartItem)
+      res.send(result)
+    })
+    app.get('/myCart', async (req, res) => {
+      const email = req.query.email;
+      let query = {};
+      if (req.query?.email) {
+        query = { userEmail: email }
+      }
+      const result = await cart.find(query).toArray()
+      res.send(result);
     })
 
     app.get("/allProducts", async (req, res) => {
@@ -54,12 +96,12 @@ async function run() {
       let products = [];
       if (name == "all products") {
         products = await productsDB.find({}).toArray();
-        return res.send( products );
+        return res.send(products);
       }
       products = await productsDB
         .find({ category: { $regex: name, $options: "i" } })
         .toArray();
-      res.send( products);
+      res.send(products);
     });
 
     // Send a ping to confirm a successful connection
@@ -73,10 +115,10 @@ async function run() {
 run().catch(console.dir);
 
 
-app.get('/',(req, res) =>{
-    res.send("Binary Tech Server is running")
+app.get('/', (req, res) => {
+  res.send("Binary Tech Server is running")
 })
 
-app.listen(port, ()=>{
-    console.log(`Binary Tech Server is running on port ${port}`);
+app.listen(port, () => {
+  console.log(`Binary Tech Server is running on port ${port}`);
 })

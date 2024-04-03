@@ -26,7 +26,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    // await client.connect();
+    await client.connect();
 
     const productsDB = client.db("Binary-Tech-DB").collection("Products")
     const phones = client.db("Binary-Tech-DB").collection("Phones")
@@ -95,14 +95,21 @@ async function run() {
       res.send(result);
     })
 
-    app.delete('/Wishlist/:id',async(req, res)=>{
-      const id=req.params.id;
-      const query = {_id:new ObjectId(id)}
+
+    app.delete('/Wishlist/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
       const result = await cart.deleteOne(query);
       res.send(result)
-  })
+    })
+    app.get('/Wishlist/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await cart.find(query).toArray();
+      res.send(result)
+    })
 
-   
+
 
 
     app.get("/allProducts", async (req, res) => {
@@ -118,9 +125,32 @@ async function run() {
       res.send(products);
     });
 
+    app.patch('/adminCart/pending/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedRole = {
+        $set: {
+          status: 'Pending'
+        }
+      }
+      const result = await cart.updateOne(filter, updatedRole)
+      res.send(result)
+    })
+    app.patch('/adminCart/delivered/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedRole = {
+        $set: {
+          status: 'Delivered'
+        }
+      }
+      const result = await cart.updateOne(filter, updatedRole)
+      res.send(result)
+    })
+
     // Send a ping to confirm a successful connection
-    // await client.db("admin").command({ ping: 1 });
-    // console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    await client.db("admin").command({ ping: 1 });
+    console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
